@@ -1,0 +1,194 @@
+Supervised learning -- predicting an output variable from high-dimensional observations
+
+supervised learning consists in learning the link between two datasets. The observed data x and the external variable y
+that we are trying to predict, usually targets or labels. Most often Y is a 1D array of length n_samples
+
+All supervised estimators try to implement a fit(X, y) method to fit the model and a predict(X) method that is given
+unlabeled observations X, returns the predicted labels y
+
+NEAREST NEIGHBOR AND THE CURSE OF DIMENSIONALITY
+
+import numpy as np
+from sklearn.datasets import load_iris
+
+iris = load_iris()
+
+iris_X, iris_Y = iris.data, iris.target
+
+np.unique(iris_Y)
+
+
+k-NEAREST NEIGHBOUR CLASSIFIERS
+The simplest possible classifier is the nearest neighbour:; given an observation X_test, find the training set(i.e the
+data used to train the estimator) the observation of the closest vector.
+
+Training set and testing set --> While experimenting any learning algorithm, it is important not to test the prediction
+of an estimator as this would not be evaluating the performance of the estimator on new data. This is why datasets are
+split into train and test data.
+
+#split iris data into test and train data
+
+np.random.seed(0)
+indices = np.random.permutation(len(iris_X))
+
+iris_X_train = iris_X[indices[:-10]]
+iris_Y_train = iris_Y[indices[:-10]]
+iris_Y_test = iris_Y[indices[-10:]]
+iris_X_test = iris_X[indices[-10:]]
+
+create a nearest fit classifier
+
+from sklearn.neighbors import KNeighborsClassifier
+
+knn = KNeighboursClassifier()
+knn.fit(iris_X_train, iris_Y_train)
+knn.predict(iris_X_test)
+
+THE CURSE OF DIMENSIONALITY
+For an estimator to be successive you need the distance between neighbouring points to be less than some value d, which
+depends on the problem. In 1D it requires n - 1/d points
+
+
+Linear model:from regression to sparsity
+
+Diabetes dataset: --> It consists of 10 physiological variables measure of 442 patients and the indication of the
+disease after 1 year
+
+diabetes = datasets.load_diabetes()
+diabetes_X_train =  diabetes.data[:-20]
+diabetes_X_test = diabetes.data[-20:]
+diabetes_Y_train = diabetes.target[:-20]
+diabetes_Y_test = diabetes.target[:-20]
+
+
+Linear regression --> In its simplest form, fits a linear model to the dataset by adjusting a set of parameters in order
+to make the squared residuals as small as possible
+
+linear_models: y =  X\beta + \epsilon
+
+X--> data
+y --> target variable
+\beta --> coefficients
+\epsilon --> observation noise
+
+SHRINKAGE: If there are few data points per dimension, noise in the observations induces high variance
+
+>>> X = np.c_[ .5, 1].T
+>>> y = [.5, 1]
+>>> test = np.c_[ 0, 2].T
+>>> regr = linear_model.LinearRegression()
+
+>>> import matplotlib.pyplot as plt
+>>> plt.figure()
+
+>>> np.random.seed(0)
+>>> for _ in range(6):
+...    this_X = .1*np.random.normal(size=(2, 1)) + X
+...    regr.fit(this_X, y)
+...    plt.plot(test, regr.predict(test))
+...    plt.scatter(this_X, y, s=3)
+
+A solution of high-dimensional statistical learning is to shrink the regression co-efficients to zero: any two randomly
+chosen set of observations are likely to be uncorrelated. This is called Ridge Regression
+
+>>> regr = linear_model.Ridge(alpha=.1)
+
+>>> plt.figure()
+
+>>> np.random.seed(0)
+>>> for _ in range(6):
+...    this_X = .1*np.random.normal(size=(2, 1)) + X
+...    regr.fit(this_X, y)
+...    plt.plot(test, regr.predict(test))
+...    plt.scatter(this_X, y, s=3)
+
+
+This is an example of bias/variance tradeoff; the larger the ridge alpha parameter, the higher the bias and the lower the
+variance
+
+We can choose alpha to minimize the left out error, this time using the diabetes dataset rather than our synthetic data
+
+>>> alphas = np.logspace(-4, -1, 6)
+>>> from __future__ import print_function
+>>> print([regr.set_params(alpha=alpha
+...             ).fit(diabetes_X_train, diabetes_y_train,
+...             ).score(diabetes_X_test, diabetes_y_test) for alpha in alphas])
+[0.5851110683883..., 0.5852073015444..., 0.5854677540698..., 0.5855512036503..., 0.5830717085554..., 0.57058999437...]
+
+Capturing in the fitted parameters noise that prevents the model to generalize to new data is called overfitting. The bias
+introduced by the ridge regression is called regularization
+
+
+SPARSITY:
+To improve the conditioning of the problem, it would be intresting to select only the informative features and set non-informative
+ones , like feature 2 to 0. Ridge Regression will decrease their contribution, but not set them to zero.
+Another penalization approach is called Lasso(least absolute shrinkage and selection operator), can set some coefficients to zero.
+Such methods are called sparse method and sparsity can be seen as an application of Occam's razor
+
+>>> regr = linear_model.Lasso()
+>>> scores = [regr.set_params(alpha=alpha
+...             ).fit(diabetes_X_train, diabetes_y_train
+...             ).score(diabetes_X_test, diabetes_y_test)
+...        for alpha in alphas]
+>>> best_alpha = alphas[scores.index(max(scores))]
+>>> regr.alpha = best_alpha
+>>> regr.fit(diabetes_X_train, diabetes_y_train)
+Lasso(alpha=0.025118864315095794, copy_X=True, fit_intercept=True,
+   max_iter=1000, normalize=False, positive=False, precompute=False,
+   random_state=None, selection='cyclic', tol=0.0001, warm_start=False)
+>>> print(regr.coef_)
+[   0.         -212.43764548  517.19478111  313.77959962 -160.8303982    -0.
+ -187.19554705   69.38229038  508.66011217   71.84239008]
+
+Different algorithms can be used to solve the same mathematical problem. For instance  the Lasso object solves the lasso regression
+problem using a coordinate decent method, that is efficient on large datasets. However, skilearn provides LassoLars using the LARS
+algorithm which is very efficient for problems in weight vector estimated to be very sparse.
+
+
+CLASSIFICATION
+
+For classification like the iris dataset, linear regression is not the right approach as it will give too much weight on data far
+from the decision frontier. A linear approach is to fit a sigmoid function or a logistic function
+>>> logistic = linear_model.LogisticRegression(C=1e5)
+>>> logistic.fit(iris_X_train, iris_y_train)
+LogisticRegression(C=100000.0, class_weight=None, dual=False,
+          fit_intercept=True, intercept_scaling=1, max_iter=100,
+          multi_class='ovr', n_jobs=1, penalty='l2', random_state=None,
+          solver='liblinear', tol=0.0001, verbose=0, warm_start=False)
+
+C value controls the amount or regularization in the LogisticRegression object
+
+
+SUPPORT VECTOR MACHINES
+
+LINEAR SVMS:
+Support Vector Machines belong to the discriminant model family: they try to find a combination of samples to build a
+plane maximizing the margin between the two classes. Regularization is set by the C parameter: a small value for C means
+ the margin is calculated using many or all of the observations around the separating line (more regularization);
+ a large value for C means the margin is calculated on observations close to the separating line (less regularization).
+
+SVM's can be used for regressions(Support Vector Regression) and classifications (Support Vector Classification)
+
+>>> from sklearn import svm
+>>> svc = svm.SVC(kernel='linear')
+>>> svc.fit(iris_X_train, iris_y_train)
+SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,
+    decision_function_shape=None, degree=3, gamma='auto', kernel='linear',
+    max_iter=-1, probability=False, random_state=None, shrinking=True,
+    tol=0.001, verbose=False)
+
+
+USING KERNELS:
+Classes are not always linearly separable in feature space. The solution is to build a decision function that is not
+linear but may be polynomial instead. This is done using the kernel trick that can be seen as creating a decision energy
+by positioning kernels on observations:
+
+>>> svc = svm.SVC(kernel='linear')
+
+>>> svc = svm.SVC(kernel='poly',
+...               degree=3)
+>>> # degree: polynomial degree
+
+>>> svc = svm.SVC(kernel='rbf')
+>>> # gamma: inverse of size of
+>>> # radial kernel

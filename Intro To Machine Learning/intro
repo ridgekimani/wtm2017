@@ -1,0 +1,70 @@
+Introduction to ML
+
+A learning problem considers a set of n samples of data and then tries to predict properties of unknown data.
+If each sample is more than a single number, it is said to have attributes or features
+
+Learning can be separated to few large categories:
+    -Supervised Learning -- In which data comes with additional attributes that we want to predict. It can either be:
+        -Classification -- Predict the class of labelled data from unlabelled data..
+        - Regression -- If the desired output consists of one or more continuous variables, then the task is known as
+          regression. Example predicting someone's age from the skin texture
+
+    -Unsupervised learning -- In which training data consists of a set of input vectors x without any corresponding
+                               target values. The goal of such may be to discover groups of similar examples within the
+                               data, clustering or determine the distribution of data within the input space,
+                               density estimation
+
+
+
+ Loading an example dataset
+    ski-learn comes with a few datasets -- iris, digits for classification and boston house prices for regression
+
+    from sklearn import datasets
+    iris = datasets.load_iris()
+    digits = datasets.load_digits()
+
+
+ A dataset is a dictionary-like object that holds all the data and some metadata about the data. It is stored in the
+ .data member, which is a n_samples, n_features array.
+ In case of a supervised problem, one or more variables are stored in the .target member
+ for example digits.data gives access to the features that can be used to classify the digit samples and digits.target
+ gives the ground truth of the digit dataset
+
+ SHAPE: The data is always a 2D array, shape (n_samples, n_features)
+
+LEARNING AND PREDICTING:
+ The task is to predict, given an image, which digit it represents. We are given a sample of the 10 possible classes
+ (0-9) on which we can fit an estimator to be able to predict classes. It's an object with fit(X,Y) and predict(T)
+
+ example is support vector classification(svc)
+ from sklearn import svm
+ clf = svm.SVC(gamma=0.01, C=100.) .. Set values using tools like grid search and cross validation
+
+ Now fit or predict
+
+ clf.fit(digits.data[:-1], digits.target[:-1]) it returns an SVC instance
+
+
+ MODEL PERSISTENCE:
+  We can be able to save a model using python's persistence models..
+
+  from sklearn.datasets import load_iris
+  from sklearn import svm
+
+  clf = svm.SVC()
+  iris = load_iris()
+  x, y = iris.data, iris.target
+  clf.fit(x, y)
+
+
+  import pickle
+  s = pickle.dumps(clf)
+  clf2 = pickle.loads(s)
+  clf.predict(X[0:1])
+
+  it is advised to use joblib's replacement of pickle(joblib.dump and joblib.load) which is efficient in big data
+
+  from sklearn import joblib
+  joblib.dump(clf, 'example.pkl')
+
+  joblib.load('example.pkl')
